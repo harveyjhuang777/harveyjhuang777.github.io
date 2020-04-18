@@ -4,6 +4,8 @@ date: 2020-04-15 08:43:55
 comments: false
 ---
 
+> Not knowing the answer doesn't make one a fool; never wanting to question does.
+
 Hi，我是Harvey，是一位Backend Engineer，也是一位熱愛健身的男孩(?)。
 此部落格主要會分享無論是工作上或是下班時間所接觸到的技術，偶爾也發一發一些生活小廢文XD
 在技術相關文章，主要會以廣義後端的技術為主，具體而言會包括但不限於以下內容：

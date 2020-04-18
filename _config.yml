@@ -5,8 +5,8 @@
 # Site
 title: Harvey Jhuang's Blog 
 subtitle: '程式/設計/生活'
-description: '主要編程語言包含Golang, Python，領域以後端技術為主。'
-keywords: 'Golang, Python, Backend'
+description: '主要以後端技術分享為主，偶爾學點前端技術。'
+keywords: 'Golang, Python, Backend, Vue.js, Linux, Docker, Kafka, Data, Architecture'
 author: Harvey Jhuang
 language: zh-TW 
 timezone: ''
@@ -112,3 +112,9 @@ search:
 # Sitemap
 sitemap:
   path: sitemap.xml
+
+# Lazyload
+lazyload:
+  enable: true 
+  onlypost: false
+  loadingImg: # eg. ./images/loading.png
