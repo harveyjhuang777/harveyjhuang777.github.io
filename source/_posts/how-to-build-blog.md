@@ -526,3 +526,8 @@ hexo deploy
 
 最後希望你能透過以上步驟建立自己的部落格，謝謝！
 
+
+# 參考
+- [Hexo+GitHub，新手也可以快速建立部落格](https://yaoandy107.github.io/hexo-tutorial/)
+- [如何搭建個人 Blog 使用 Hexo + Gitpage](https://medium.com/@bebebobohaha/%E4%BD%BF%E7%94%A8-hexo-gitpage-%E6%90%AD%E5%BB%BA%E5%80%8B%E4%BA%BA-blog-5c6ed52f23db)
+
