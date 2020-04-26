@@ -4,7 +4,7 @@ date: 2020-04-24 07:17:45
 tags: 
 - kafka
 categories:
-- Kafka Series
+- Kafka 筆記
 ---
 
 # What is Kafka?

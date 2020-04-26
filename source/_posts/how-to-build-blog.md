@@ -4,7 +4,7 @@ tags:
 - github
 - hexo
 categories:
-- step-by-step
+- 自己動手做
 ---
 
 作為部落格的第一篇文章，十分適合來分享如何在30~60 min 內搭建起一個部落格。
