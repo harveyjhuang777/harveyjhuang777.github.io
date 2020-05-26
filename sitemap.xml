@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/2020/05/19/kafka-basic/</loc>
+    
+    <lastmod>2020-05-26T11:09:11.010Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/2020/04/15/how-to-build-blog/</loc>
+    
+    <lastmod>2020-05-20T08:36:20.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/2020/04/19/data-auto-pipeline/</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/2020/04/26/golang-interface/</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/2020/04/24/what-is-kafka/</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/404.html</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/about/index.html</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/categories/index.html</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.harveyjhuang.com/tags/index.html</loc>
+    
+    <lastmod>2020-05-19T10:31:25.000Z</lastmod>
+    
+  </url>
+  
+</urlset>

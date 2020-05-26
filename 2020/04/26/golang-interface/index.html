@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.harveyjhuang.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":5,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言 本篇將簡單透過一些簡單的例子來理解 Golang 的 Interface。 這篇文章主要涉及內容包含：  簡介 Interface 為什麼要用 Interface 如何應用 Interface">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入淺出 Golang Interface">
+<meta property="og:url" content="https://blog.harveyjhuang.com/2020/04/26/golang-interface/index.html">
+<meta property="og:site_name" content="Harvey 技術筆記">
+<meta property="og:description" content="前言 本篇將簡單透過一些簡單的例子來理解 Golang 的 Interface。 這篇文章主要涉及內容包含：  簡介 Interface 為什麼要用 Interface 如何應用 Interface">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2020-04-26T12:31:38.000Z">
+<meta property="article:modified_time" content="2020-05-19T10:31:25.000Z">
+<meta property="article:author" content="Harvey Jhuang">
+<meta property="article:tag" content="golang">
+<meta property="article:tag" content="interface">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.harveyjhuang.com/2020/04/26/golang-interface/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-TW'
+  };
+</script>
+
+  <title>深入淺出 Golang Interface | Harvey 技術筆記</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Harvey 技術筆記" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Harvey 技術筆記</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">程式/設計/生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>關於</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜尋
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜尋..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-TW">
+    <link itemprop="mainEntityOfPage" href="https://blog.harveyjhuang.com/2020/04/26/golang-interface/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Harvey Jhuang">
+      <meta itemprop="description" content="主要以後端技術分享為主，偶爾學點前端技術。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Harvey 技術筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入淺出 Golang Interface
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">發表於</span>
+
+              <time title="創建時間：2020-04-26 20:31:38" itemprop="dateCreated datePublished" datetime="2020-04-26T20:31:38+08:00">2020-04-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新於</span>
+                <time title="修改時間：2020-05-19 18:31:25" itemprop="dateModified" datetime="2020-05-19T18:31:25+08:00">2020-05-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分類於</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang-%E7%AD%86%E8%A8%98/" itemprop="url" rel="index"><span itemprop="name">Golang 筆記</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1>前言</h1>
+<p>本篇將簡單透過一些簡單的例子來理解 Golang 的 Interface。<br>
+這篇文章主要涉及內容包含：</p>
+<ul>
+<li>簡介 Interface</li>
+<li>為什麼要用 Interface</li>
+<li>如何應用 Interface</li>
+</ul>
+<a id="more"></a>
+<h1>Let’s Start!</h1>
+<h2 id="簡介-Interface">簡介 Interface</h2>
+<blockquote>
+<p>So what is an interface? An interface is two things: it is a set of methods, but it is also a type.<br>
+Interface 既是方法的集合，也是一個型別，因此我們將會以這兩部分去介紹 Interface</p>
+</blockquote>
+<h3 id="A-Set-of-Methods">A Set of Methods</h3>
+<h4 id="說明">說明</h4>
+<p>在 Golang 中，interface 是一組 method 的集合，是 duck-type programming 的一種體現：</p>
+<ul>
+<li>不關心屬性（數據），只關心行為（方法）</li>
+<li>如果一個類型實現了一個 interface 中所有方法，該類型實現了該 interface</li>
+</ul>
+<p>因此在定義function 的時候，我們可以將參數定義成 interface，使得我們調用function 的時候可以做到非常的靈活。</p>
+<h4 id="範例">範例</h4>
+<p>下面我們透過 Go by example 來看看 Interface 的用法。首先我們先定義幾何的 interface ，其中包含 area &amp; perim 兩個方法，最後再分別定義 rect &amp; circle 兩個 struct 去實現 geometry 的方法，使得我們在呼叫 measure 時會依照不同算法去計算。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"fmt"</span></span><br><span class="line">    <span class="string">"math"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> geometry <span class="keyword">interface</span> &#123;</span><br><span class="line">    area() <span class="keyword">float64</span></span><br><span class="line">    perim() <span class="keyword">float64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> rect <span class="keyword">struct</span> &#123;</span><br><span class="line">    width, height <span class="keyword">float64</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> circle <span class="keyword">struct</span> &#123;</span><br><span class="line">    radius <span class="keyword">float64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r rect)</span> <span class="title">area</span><span class="params">()</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> r.width * r.height</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r rect)</span> <span class="title">perim</span><span class="params">()</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span>*r.width + <span class="number">2</span>*r.height</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c circle)</span> <span class="title">area</span><span class="params">()</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> math.Pi * c.radius * c.radius</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c circle)</span> <span class="title">perim</span><span class="params">()</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span> * math.Pi * c.radius</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">measure</span><span class="params">(g geometry)</span></span> &#123;</span><br><span class="line">    fmt.Println(g)</span><br><span class="line">    fmt.Println(g.area())</span><br><span class="line">    fmt.Println(g.perim())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    r := rect&#123;width: <span class="number">3</span>, height: <span class="number">4</span>&#125;</span><br><span class="line">    c := circle&#123;radius: <span class="number">5</span>&#125;</span><br><span class="line"></span><br><span class="line">    measure(r)</span><br><span class="line">    measure(c)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>output:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ go run interfaces.go</span><br><span class="line">&#123;3 4&#125;</span><br><span class="line">12</span><br><span class="line">14</span><br><span class="line">&#123;5&#125;</span><br><span class="line">78.53981633974483</span><br><span class="line">31.41592653589793</span><br></pre></td></tr></table></figure>
+<h3 id="A-Type">A Type</h3>
+<h4 id="說明-2">說明</h4>
+<p>interface{} 是一個空的interface 類型，根據前文的定義由於空的interface 沒有方法，所以可以認為所有的類型都實現了 interface{}。<br>
+因此假設一個 function 的參數是 interface{} ，則這個 function 應該可以接受任何類型作為它的參數。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doSomething</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span></span>&#123;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是這並<strong>不代表 v 是任何型別</strong>，在 doSomething 中 v 僅僅是一個 interface 類型，之所以function 可以接受任何類型是因為 go 在 runtime 時，會將傳遞到 function 的任何類型都被自動轉換成 interface{}，因此 doSomething 便能接受所有型別的參數，但必須再次強調這並不代表 v 就是任何型別。</p>
+<h4 id="進一步說明">進一步說明</h4>
+<p>至於為什麼可以做到這件事呢？首先我們可以看一下 a tour of go 對 interface value 的說明</p>
+<blockquote>
+<p>interface values can be thought of as a tuple of a value and a concrete type:<br>
+(value, type)</p>
+</blockquote>
+<p>簡單的來說 interface 可以視作是一個 (value, type) 的 tuple ，一個 element 用於指向其基礎型別的方法集(type)，另一個 element 用於指向其所保存的實際數據(value)，因此當呼叫 interface 的方法時，會在其基礎類型上執行相同名稱的方法。<br>
+這是什麼意思呢？讓我們以 a tour of go 的例子解釋，我們可以看到 main function 中 i.M() 當 i = &amp;T{“Hello”} ，實際上呼叫的是 t.M() 也就是會得到 Hello 的結果。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">pckage main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"math"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> I <span class="keyword">interface</span> &#123;</span><br><span class="line">	M()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> T <span class="keyword">struct</span> &#123;</span><br><span class="line">	S <span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *T)</span> <span class="title">M</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(t.S)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> F <span class="keyword">float64</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f F)</span> <span class="title">M</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(f)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> i I</span><br><span class="line">	</span><br><span class="line">	i = &amp;T&#123;<span class="string">"Hello"</span>&#125;</span><br><span class="line">	describe(i)</span><br><span class="line">	i.M()</span><br><span class="line"></span><br><span class="line">	i = F(math.Pi)</span><br><span class="line">	describe(i)</span><br><span class="line">	i.M()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">describe</span><span class="params">(i I)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">"(%v, %T)\n"</span>, i, i)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="為什麼要用-Interface">為什麼要用 Interface</h2>
+<p>基本上談到為何要用 interface 大多數都會提到兩個面向：</p>
+<ul>
+<li>writing generic algorithm</li>
+<li>hiding implementation detail</li>
+</ul>
+<h3 id="writing-generic-algorithm">writing generic algorithm</h3>
+<p>嚴格來說，在 Golang 不支持泛型編程，但是我們可以透過 interface 實現泛型編程。比如我們現在要寫一個泛型算法，參數定義採用 interface 就可以了，這邊我們以官方的 sort 為例。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> sort</span><br><span class="line"></span><br><span class="line"><span class="comment">// A type, typically a collection, that satisfies sort.Interface can be</span></span><br><span class="line"><span class="comment">// sorted by the routines in this package.  The methods require that the</span></span><br><span class="line"><span class="comment">// elements of the collection be enumerated by an integer index.</span></span><br><span class="line"><span class="keyword">type</span> Interface <span class="keyword">interface</span> &#123;</span><br><span class="line">    <span class="comment">// Len is the number of elements in the collection.</span></span><br><span class="line">    Len() <span class="keyword">int</span></span><br><span class="line">    <span class="comment">// Less reports whether the element with</span></span><br><span class="line">    <span class="comment">// index i should sort before the element with index j.</span></span><br><span class="line">    Less(i, j <span class="keyword">int</span>) <span class="keyword">bool</span></span><br><span class="line">    <span class="comment">// Swap swaps the elements with indexes i and j.</span></span><br><span class="line">    Swap(i, j <span class="keyword">int</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// Sort sorts data.</span></span><br><span class="line"><span class="comment">// It makes one call to data.Len to determine n, and O(n*log(n)) calls to</span></span><br><span class="line"><span class="comment">// data.Less and data.Swap. The sort is not guaranteed to be stable.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Sort</span><span class="params">(data Interface)</span></span> &#123;</span><br><span class="line">    <span class="comment">// Switch to heapsort if depth of 2*ceil(lg(n+1)) is reached.</span></span><br><span class="line">    n := data.Len()</span><br><span class="line">    maxDepth := <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i := n; i &gt; <span class="number">0</span>; i &gt;&gt;= <span class="number">1</span> &#123;</span><br><span class="line">        maxDepth++</span><br><span class="line">    &#125;</span><br><span class="line">    maxDepth *= <span class="number">2</span></span><br><span class="line">    quickSort(data, <span class="number">0</span>, n, maxDepth)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Sort function 的參數是一個 interface，包含了三個方法：Len()，Less(i,j int)，Swap(i, j int)。使用的時候不管數組的元素類型是什麼類型（int, float, string…），只要我們實現了這三個方法就可以使用 Sort function，這樣就實現了“泛型編程”。</p>
+<h3 id="hiding-implementation-detail">hiding implementation detail</h3>
+<p>隱藏具體實現。比如我設計一個 function 給你返回一個 interface，那麼你只能通過 interface 裡面的方法來做一些操作，但是內部的具體實現是完全不知道的。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"fmt"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SalaryCalculator <span class="keyword">interface</span> &#123;</span><br><span class="line">    CalculateSalary() <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Supervisor <span class="keyword">struct</span> &#123;</span><br><span class="line">    id     <span class="keyword">int</span></span><br><span class="line">    salary <span class="keyword">int</span></span><br><span class="line">    bonus  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s Supervisor)</span> <span class="title">CalculateSalary</span><span class="params">()</span> <span class="title">int</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> s.salary + s.bonus</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Employee <span class="keyword">struct</span> &#123;</span><br><span class="line">    id          <span class="keyword">int</span></span><br><span class="line">    salary      <span class="keyword">int</span></span><br><span class="line">    overtimePay <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e Employee)</span> <span class="title">CalculateSalary</span><span class="params">()</span> <span class="title">int</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.salary + e.overtimePay</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">totalExpense</span><span class="params">(s []SalaryCalculator)</span></span> &#123;</span><br><span class="line">    expense := <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> _, v := <span class="keyword">range</span> s &#123;</span><br><span class="line">	<span class="comment">// 會計人員不用知道每位員工的具體計薪方式，只需要知道每個員工的總額，並將其加總作帳即可</span></span><br><span class="line">	expense = expense + v.CalculateSalary()</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">"Total Expense Per Month $%d"</span>, expense)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    sup1 := Supervisor&#123;<span class="number">1</span>, <span class="number">5000</span>, <span class="number">2000</span>&#125;</span><br><span class="line">    sup2 := Supervisor&#123;<span class="number">2</span>, <span class="number">6000</span>, <span class="number">3000</span>&#125;</span><br><span class="line">    emp1 := Employee&#123;<span class="number">3</span>, <span class="number">3000</span>, <span class="number">200</span>&#125;</span><br><span class="line">    employees := []SalaryCalculator&#123;sup1, sup2, emp1&#125;</span><br><span class="line">    totalExpense(employees)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Total Expense Per Month $19200</span></span><br></pre></td></tr></table></figure>
+<h2 id="如何應用-Interface">如何應用 Interface</h2>
+<h3 id="Type-Assertion">Type Assertion</h3>
+<p>Type assertion 可以用來取出 interface 底層的 value</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Bad</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">do</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    n := v.(<span class="keyword">int</span>)    <span class="comment">// might panic</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//Good</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">do</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    n, ok := v.(<span class="keyword">int</span>)</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="comment">// handling when assert failing</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Type-Switch">Type Switch</h3>
+<p>當有多個或不確定的底層 type 時，可以用 switch 去做個別處理</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//InterfaceToString convert interface to string</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">InterfaceToString</span><span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">switch</span> v := i.(<span class="keyword">type</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">int</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.Itoa(i.(<span class="keyword">int</span>))</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">int32</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatInt(<span class="keyword">int64</span>(i.(<span class="keyword">int32</span>)), <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">int64</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatInt(i.(<span class="keyword">int64</span>), <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">uint</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.Itoa(<span class="keyword">int</span>(i.(<span class="keyword">uint</span>)))</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">uint32</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatInt(<span class="keyword">int64</span>(i.(<span class="keyword">uint32</span>)), <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">uint64</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatInt(<span class="keyword">int64</span>(i.(<span class="keyword">uint64</span>)), <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">float32</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatFloat(<span class="keyword">float64</span>(i.(<span class="keyword">float32</span>)), <span class="string">'f'</span>, <span class="number">-1</span>, <span class="number">32</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">float64</span>:</span><br><span class="line">	<span class="keyword">return</span> strconv.FormatFloat(i.(<span class="keyword">float64</span>), <span class="string">'f'</span>, <span class="number">-1</span>, <span class="number">64</span>)</span><br><span class="line">    <span class="keyword">case</span> time.Time:</span><br><span class="line">	<span class="keyword">return</span> i.(time.Time).String()</span><br><span class="line">    <span class="keyword">case</span> <span class="keyword">string</span>:</span><br><span class="line">	<span class="keyword">return</span> i.(<span class="keyword">string</span>)</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">	<span class="keyword">return</span> <span class="string">"unknown"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Implementing-interfaces-using-pointer-receivers-vs-value-receivers">Implementing interfaces using pointer receivers vs value receivers</h3>
+<p>結論：</p>
+<ul>
+<li>使用 value receivers，pointer &amp; value 都可以視作 interface 的實作</li>
+<li>使用 pointer receivers，只有 pointer 被視作 interface 的實作</li>
+</ul>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Hero <span class="keyword">interface</span> &#123;</span><br><span class="line">	Describe()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> DC <span class="keyword">struct</span> &#123;</span><br><span class="line">	name <span class="keyword">string</span></span><br><span class="line">	age  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b DC)</span> <span class="title">Describe</span><span class="params">()</span></span> &#123; <span class="comment">//implemented using value receiver</span></span><br><span class="line">	fmt.Printf(<span class="string">"%s is %d years old\n"</span>, b.name, b.age)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Marvel <span class="keyword">struct</span> &#123;</span><br><span class="line">	name <span class="keyword">string</span></span><br><span class="line">	age  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(j *Marvel)</span> <span class="title">Describe</span><span class="params">()</span></span> &#123; <span class="comment">//implemented using pointer receiver</span></span><br><span class="line">	fmt.Printf(<span class="string">"%s is %d years old\n"</span>, j.name, j.age)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> d1 Hero <span class="comment">// 聲明 d1 是 Hero(interface) 類型</span></span><br><span class="line">	p1 := DC&#123;<span class="string">"Batman"</span>, <span class="number">35</span>&#125;</span><br><span class="line">	d1 = p1 <span class="comment">// 賦值 p1 到 d1</span></span><br><span class="line">	d1.Describe()</span><br><span class="line">	p2 := DC&#123;<span class="string">"Joker"</span>, <span class="number">42</span>&#125;</span><br><span class="line">	d1 = &amp;p2 <span class="comment">// 賦值 &amp;p2 到 d1</span></span><br><span class="line">	d1.Describe()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> d2 Hero <span class="comment">// 聲明 d2 是 Describer(interface) 類型</span></span><br><span class="line">	a := Marvel&#123;<span class="string">"IronMan"</span>, <span class="number">33</span>&#125;</span><br><span class="line">	<span class="comment">//d2 = a</span></span><br><span class="line">	<span class="comment">//d2.Describe()</span></span><br><span class="line">	<span class="comment">// 當 assign value 時，必須要 implements interface 的內容，否則會 error</span></span><br><span class="line">	<span class="comment">// 原因在於 a 並沒有實作 Describe()，實作 Describe() 的是 pointer receiver，因此不能說 a 實作 Describer interface</span></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">		cannot use a (type Marvel) as type Hero in assignment:</span></span><br><span class="line"><span class="comment">		Marvel does not implement Hero (Describe method has pointer receiver)</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line"></span><br><span class="line">	d2 = &amp;a <span class="comment">// 賦值 &amp;a 到 d2</span></span><br><span class="line">	d2.Describe()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">Batman is 35 years old</span></span><br><span class="line"><span class="comment">Joker is 42 years old</span></span><br><span class="line"><span class="comment">IronMan is 33 years old</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<h3 id="Embedding-interfaces">Embedding interfaces</h3>
+<p>在 golang 實現多個 interface 可以透過 embedding interfaces 來處理：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">type</span> Reader <span class="keyword">interface</span> &#123;</span><br><span class="line">    Read(p []<span class="keyword">byte</span>) (n <span class="keyword">int</span>, err error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Writer <span class="keyword">interface</span> &#123;</span><br><span class="line">    Write(p []<span class="keyword">byte</span>) (n <span class="keyword">int</span>, err error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ReadWriter <span class="keyword">interface</span> &#123;</span><br><span class="line">    Reader</span><br><span class="line">    Writer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//同時實現 Reader, Writer, ReadWriter 三種 interface</span></span><br><span class="line"><span class="keyword">type</span> MyIO <span class="keyword">struct</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(io *MyIO)</span> <span class="title">Read</span><span class="params">(p []<span class="keyword">byte</span>)</span> <span class="params">(n <span class="keyword">int</span>, err error)</span></span> &#123;...&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(io *MyIO)</span> <span class="title">Write</span><span class="params">(p []<span class="keyword">byte</span>)</span> <span class="params">(n <span class="keyword">int</span>, err error)</span></span> &#123;...&#125;</span><br></pre></td></tr></table></figure>
+<h1>總結</h1>
+<blockquote>
+<p>Is Go an object-oriented language?<br>
+Yes and no. Although Go has types and methods and allows an object-oriented style of programming, there is no type hierarchy.</p>
+</blockquote>
+<p>interface 是 Golang 的一種重要的特性，Golang 透過型別和方法讓使用者可以用 OOP 的思維來設計程式，但這不代表當中有型別繼承的現象，並且這也同樣會帶來效能的損失。拋開效能不談，interface 對於我們如何設計代碼給了更多變化和通用性。</p>
+<h1>Ref</h1>
+<ul>
+<li><a href="https://jordanorelli.com/post/32665860244/how-to-use-interfaces-in-go" target="_blank" rel="noopener">How to use interfaces in Go</a></li>
+<li><a href="https://golang.org/ref/spec#Interface_types" target="_blank" rel="noopener">The Go Programming Language Specification</a></li>
+<li><a href="https://gobyexample.com/interfaces" target="_blank" rel="noopener">Go by Example: Interfaces</a></li>
+<li><a href="https://sanyuesha.com/2017/07/22/how-to-understand-go-interface/" target="_blank" rel="noopener">理解 Go interface 的 5 个关键点</a></li>
+<li><a href="https://tour.golang.org/methods/11" target="_blank" rel="noopener">A Tour of Go</a></li>
+<li><a href="https://golang.org/doc/faq#Is_Go_an_object-oriented_language" target="_blank" rel="noopener">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/interface/" rel="tag"># interface</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/24/what-is-kafka/" rel="prev" title="What is Kafka?">
+      <i class="fa fa-chevron-left"></i> What is Kafka?
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/19/kafka-basic/" rel="next" title="Kafka 基本概念與安裝">
+      Kafka 基本概念與安裝 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概要
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">2.</span> <span class="nav-text">Let’s Start!</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#簡介-Interface"><span class="nav-number">2.1.</span> <span class="nav-text">簡介 Interface</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-Set-of-Methods"><span class="nav-number">2.1.1.</span> <span class="nav-text">A Set of Methods</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#說明"><span class="nav-number">2.1.1.1.</span> <span class="nav-text">說明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#範例"><span class="nav-number">2.1.1.2.</span> <span class="nav-text">範例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-Type"><span class="nav-number">2.1.2.</span> <span class="nav-text">A Type</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#說明-2"><span class="nav-number">2.1.2.1.</span> <span class="nav-text">說明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#進一步說明"><span class="nav-number">2.1.2.2.</span> <span class="nav-text">進一步說明</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#為什麼要用-Interface"><span class="nav-number">2.2.</span> <span class="nav-text">為什麼要用 Interface</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#writing-generic-algorithm"><span class="nav-number">2.2.1.</span> <span class="nav-text">writing generic algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hiding-implementation-detail"><span class="nav-number">2.2.2.</span> <span class="nav-text">hiding implementation detail</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何應用-Interface"><span class="nav-number">2.3.</span> <span class="nav-text">如何應用 Interface</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Type-Assertion"><span class="nav-number">2.3.1.</span> <span class="nav-text">Type Assertion</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Type-Switch"><span class="nav-number">2.3.2.</span> <span class="nav-text">Type Switch</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Implementing-interfaces-using-pointer-receivers-vs-value-receivers"><span class="nav-number">2.3.3.</span> <span class="nav-text">Implementing interfaces using pointer receivers vs value receivers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Embedding-interfaces"><span class="nav-number">2.3.4.</span> <span class="nav-text">Embedding interfaces</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">3.</span> <span class="nav-text">總結</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">4.</span> <span class="nav-text">Ref</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Harvey Jhuang"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Harvey Jhuang</p>
+  <div class="site-description" itemprop="description">主要以後端技術分享為主，偶爾學點前端技術。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:ohmygirl386@hotmail.com" title="E-Mail → mailto:ohmygirl386@hotmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/harvey-jhuang-6864a011b" title="Linkedin → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;harvey-jhuang-6864a011b" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.cakeresume.com/me/jiawei-jhuang" title="CakeResume → https:&#x2F;&#x2F;www.cakeresume.com&#x2F;me&#x2F;jiawei-jhuang" rel="noopener" target="_blank"><i class="fas fa-file fa-fw"></i>CakeResume</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="fa fa-rss fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Harvey Jhuang</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 強力驅動
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'fbd0a4d8a2c95b4dca00',
+      clientSecret: '84d8fd7717b61491b274f8213716830dd1e0ce5c',
+      repo        : 'harveyjhuang777.github.io',
+      owner       : 'harveyjhuang777',
+      admin       : ['harveyjhuang777'],
+      id          : 'fb3877ceb8b8923d234d68f09428edf2',
+        language: 'zh-TW',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script>!function(e){var c=Array.prototype.slice.call(document.querySelectorAll("img[data-original]"));function i(){for(var r=0;r<c.length;r++)t=c[r],0<=(n=t.getBoundingClientRect()).bottom&&0<=n.left&&n.top<=(e.innerHeight||document.documentElement.clientHeight)&&function(){var t,n,e,i,o=c[r];t=o,n=function(){c=c.filter(function(t){return o!==t})},e=new Image,i=t.getAttribute("data-original"),e.onload=function(){t.src=i,n&&n()},e.src=i}();var t,n}i(),e.addEventListener("scroll",function(){var t,n;t=i,n=e,clearTimeout(t.tId),t.tId=setTimeout(function(){t.call(n)},500)})}(this);</script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(e.href.match(t)||e.href.match(r))&&(e.href=a.dataset.original)})});</script></body>
+</html>

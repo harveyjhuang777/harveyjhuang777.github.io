@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.harveyjhuang.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":5,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言 本篇將透過幾個面向來簡要介紹如何規劃一套數據同步系統：   情境與思維  專案情境 技術選型    專案簡介  專案目標 設計思路 專案瓶頸與突破    結論">
+<meta property="og:type" content="article">
+<meta property="og:title" content="透過 Kafka &amp; Golang 設計一套數據同步系統">
+<meta property="og:url" content="https://blog.harveyjhuang.com/2020/04/19/data-auto-pipeline/index.html">
+<meta property="og:site_name" content="Harvey 技術筆記">
+<meta property="og:description" content="前言 本篇將透過幾個面向來簡要介紹如何規劃一套數據同步系統：   情境與思維  專案情境 技術選型    專案簡介  專案目標 設計思路 專案瓶頸與突破    結論">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAC9UExURVlZWdPT07KysmRkZIWFhfT09JmZmWZmZm9vb39/fxkZGUxMTDMzM3p6epCQkKamppubm729venp6cjIyN7e3tbW1s/Pz8LCwnx8fLS0tFZWVoiIiI+Pj6GhoeTk5Glpabu7u93d3evr66CgoJSUlKqqqsnJyeDg4Hd3d8PDw+Xl5bi4uNHR0dvb26Ojo6urq+fn51hYWDg4OCgoKHBwcK2traenp0FBQe7u7vHx8U5OTre3t8zMzHV1df///7GrnpQAAAA/dFJOU///////////////////////////////////////////////////////////////////////////////////AI4mfBcAAAUGSURBVHja7NoJb6M4GMZxY0NCD64kve/pMZ2d3Z297+X7f6zFNmBAMUXa6URl/q9UJSWPUPzrizFWRUlNLgEBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYYIEFAVhggQUWWGBBABZYYIEFFlgQgAUWWGCBBRYEYIEFFlhggQUBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYn6cCIcRXgvX/h9qcIVBqDdbEM8RCxGCB9QqXYRwHYDHBgwXWl8eKZKiESHI3Ba1kWs3fKixcaJUl1YyeBm7Ocq+yLItUiVBGnXxenSHJolIKEcwHq6ikbOX1YGVzQCTN8LPmSLreghUl9sN4Uw7yajMrLC0TZ1ImzqY6FEop0+pIaEN5HaoOxVuwEqFyc4I46uSlzOLqgxlh6UaR9l3VYWl9Fdoxb1Q90KJtu41pwwFW/WHhTtW8i7TafLCqRsk6bsGw63L9qurXRmuIlbT9lDQnlXU+nBFW1Q2qnZbDprWa2tjR90LZFqx1/+Td/HpGWLlrLDvIwTcx6dQ1Vrntbig68cDms3JwbA5Y1azs1ger6sNV/bbIw1jU81MvNAGrl58RVn8ozW+btF08iGFoAlYvP3csfVur1gJBEIA1uBmue5dhZDOyO2epbmgCVi8/I6x0MMHH9pjsTfBhNzQBq5uPZoQlB0uH3DZG4EZqQ26fL3sZq5uf09Ih6qw3i/pm6BZO0qZX7rrUS68Xsbr5ZE4rePMk08pk9aUZugfqppvs6AM1Acvlo/StP+6EbW06z8hJqxbYp2BZPQUnFsLsKuhQdaHqn5ewbF7KXIn0jWO5MqOQ7RaNLPtbNMmmhimj0GUmYLl8Gs0Lq4wyPbTu1l2QKqHSouzs3OlDIslW5SQsnY/NXmFplyNvEuuLV/Tau9BzwiraDUSwXmysztYWWNtL1psXeumgIrDGaqXvBfUuvtqUYI3V2t1wk1e2msFluJJm6zDJXv/fIfjPP7DAAgsssCiwwAILLLDAosACCyywwAKLAgsssMACC6zt9fDz/v75tyOB+98PD2+ORgKffjw4OP1uJPDxl+Xy8v1I4MPF3t7VNyOB4/vF4uzdzrG+39f1kz/w66Guv/yBvw90KX/gZKkr8Qf+2dOV+gNHC12/7RxrabD2/a31bLAO/a11YbAO/K21MFhLf2s9Gqw9f2vdGqzFu11jnVusE2/gxmI9eQOnFuvYG7i0WH7uK4t15w2cWazrXWP9a7H8f/bQYvm/6IPF+sF/pVssf19Ii/WH/0K2WH/uGuvEWC39gSdj9Twy+Rqri5EZx1gt/IE7Y/XoD1wbq9vd3w1PlufnD2OBp+ebm/uxwPHF6emnscDR4vLy41jg7vHq6sNY4Pr27OyYdRaLUrDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssL6u+k+AAQCR9eHtLKvLfwAAAABJRU5ErkJggg==">
+<meta property="og:image" content="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAC9UExURVlZWdPT07KysmRkZIWFhfT09JmZmWZmZm9vb39/fxkZGUxMTDMzM3p6epCQkKamppubm729venp6cjIyN7e3tbW1s/Pz8LCwnx8fLS0tFZWVoiIiI+Pj6GhoeTk5Glpabu7u93d3evr66CgoJSUlKqqqsnJyeDg4Hd3d8PDw+Xl5bi4uNHR0dvb26Ojo6urq+fn51hYWDg4OCgoKHBwcK2traenp0FBQe7u7vHx8U5OTre3t8zMzHV1df///7GrnpQAAAA/dFJOU///////////////////////////////////////////////////////////////////////////////////AI4mfBcAAAUGSURBVHja7NoJb6M4GMZxY0NCD64kve/pMZ2d3Z297+X7f6zFNmBAMUXa6URl/q9UJSWPUPzrizFWRUlNLgEBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYYIEFAVhggQUWWGBBABZYYIEFFlgQgAUWWGCBBRYEYIEFFlhggQUBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYn6cCIcRXgvX/h9qcIVBqDdbEM8RCxGCB9QqXYRwHYDHBgwXWl8eKZKiESHI3Ba1kWs3fKixcaJUl1YyeBm7Ocq+yLItUiVBGnXxenSHJolIKEcwHq6ikbOX1YGVzQCTN8LPmSLreghUl9sN4Uw7yajMrLC0TZ1ImzqY6FEop0+pIaEN5HaoOxVuwEqFyc4I46uSlzOLqgxlh6UaR9l3VYWl9Fdoxb1Q90KJtu41pwwFW/WHhTtW8i7TafLCqRsk6bsGw63L9qurXRmuIlbT9lDQnlXU+nBFW1Q2qnZbDprWa2tjR90LZFqx1/+Td/HpGWLlrLDvIwTcx6dQ1Vrntbig68cDms3JwbA5Y1azs1ger6sNV/bbIw1jU81MvNAGrl58RVn8ozW+btF08iGFoAlYvP3csfVur1gJBEIA1uBmue5dhZDOyO2epbmgCVi8/I6x0MMHH9pjsTfBhNzQBq5uPZoQlB0uH3DZG4EZqQ26fL3sZq5uf09Ih6qw3i/pm6BZO0qZX7rrUS68Xsbr5ZE4rePMk08pk9aUZugfqppvs6AM1Acvlo/StP+6EbW06z8hJqxbYp2BZPQUnFsLsKuhQdaHqn5ewbF7KXIn0jWO5MqOQ7RaNLPtbNMmmhimj0GUmYLl8Gs0Lq4wyPbTu1l2QKqHSouzs3OlDIslW5SQsnY/NXmFplyNvEuuLV/Tau9BzwiraDUSwXmysztYWWNtL1psXeumgIrDGaqXvBfUuvtqUYI3V2t1wk1e2msFluJJm6zDJXv/fIfjPP7DAAgsssCiwwAILLLDAosACCyywwAKLAgsssMACC6zt9fDz/v75tyOB+98PD2+ORgKffjw4OP1uJPDxl+Xy8v1I4MPF3t7VNyOB4/vF4uzdzrG+39f1kz/w66Guv/yBvw90KX/gZKkr8Qf+2dOV+gNHC12/7RxrabD2/a31bLAO/a11YbAO/K21MFhLf2s9Gqw9f2vdGqzFu11jnVusE2/gxmI9eQOnFuvYG7i0WH7uK4t15w2cWazrXWP9a7H8f/bQYvm/6IPF+sF/pVssf19Ii/WH/0K2WH/uGuvEWC39gSdj9Twy+Rqri5EZx1gt/IE7Y/XoD1wbq9vd3w1PlufnD2OBp+ebm/uxwPHF6emnscDR4vLy41jg7vHq6sNY4Pr27OyYdRaLUrDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssL6u+k+AAQCR9eHtLKvLfwAAAABJRU5ErkJggg==">
+<meta property="article:published_time" content="2020-04-19T12:25:03.000Z">
+<meta property="article:modified_time" content="2020-05-19T10:31:25.000Z">
+<meta property="article:author" content="Harvey Jhuang">
+<meta property="article:tag" content="golang">
+<meta property="article:tag" content="kafka">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAC9UExURVlZWdPT07KysmRkZIWFhfT09JmZmWZmZm9vb39/fxkZGUxMTDMzM3p6epCQkKamppubm729venp6cjIyN7e3tbW1s/Pz8LCwnx8fLS0tFZWVoiIiI+Pj6GhoeTk5Glpabu7u93d3evr66CgoJSUlKqqqsnJyeDg4Hd3d8PDw+Xl5bi4uNHR0dvb26Ojo6urq+fn51hYWDg4OCgoKHBwcK2traenp0FBQe7u7vHx8U5OTre3t8zMzHV1df///7GrnpQAAAA/dFJOU///////////////////////////////////////////////////////////////////////////////////AI4mfBcAAAUGSURBVHja7NoJb6M4GMZxY0NCD64kve/pMZ2d3Z297+X7f6zFNmBAMUXa6URl/q9UJSWPUPzrizFWRUlNLgEBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYYIEFAVhggQUWWGBBABZYYIEFFlgQgAUWWGCBBRYEYIEFFlhggQUBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYn6cCIcRXgvX/h9qcIVBqDdbEM8RCxGCB9QqXYRwHYDHBgwXWl8eKZKiESHI3Ba1kWs3fKixcaJUl1YyeBm7Ocq+yLItUiVBGnXxenSHJolIKEcwHq6ikbOX1YGVzQCTN8LPmSLreghUl9sN4Uw7yajMrLC0TZ1ImzqY6FEop0+pIaEN5HaoOxVuwEqFyc4I46uSlzOLqgxlh6UaR9l3VYWl9Fdoxb1Q90KJtu41pwwFW/WHhTtW8i7TafLCqRsk6bsGw63L9qurXRmuIlbT9lDQnlXU+nBFW1Q2qnZbDprWa2tjR90LZFqx1/+Td/HpGWLlrLDvIwTcx6dQ1Vrntbig68cDms3JwbA5Y1azs1ger6sNV/bbIw1jU81MvNAGrl58RVn8ozW+btF08iGFoAlYvP3csfVur1gJBEIA1uBmue5dhZDOyO2epbmgCVi8/I6x0MMHH9pjsTfBhNzQBq5uPZoQlB0uH3DZG4EZqQ26fL3sZq5uf09Ih6qw3i/pm6BZO0qZX7rrUS68Xsbr5ZE4rePMk08pk9aUZugfqppvs6AM1Acvlo/StP+6EbW06z8hJqxbYp2BZPQUnFsLsKuhQdaHqn5ewbF7KXIn0jWO5MqOQ7RaNLPtbNMmmhimj0GUmYLl8Gs0Lq4wyPbTu1l2QKqHSouzs3OlDIslW5SQsnY/NXmFplyNvEuuLV/Tau9BzwiraDUSwXmysztYWWNtL1psXeumgIrDGaqXvBfUuvtqUYI3V2t1wk1e2msFluJJm6zDJXv/fIfjPP7DAAgsssCiwwAILLLDAosACCyywwAKLAgsssMACC6zt9fDz/v75tyOB+98PD2+ORgKffjw4OP1uJPDxl+Xy8v1I4MPF3t7VNyOB4/vF4uzdzrG+39f1kz/w66Guv/yBvw90KX/gZKkr8Qf+2dOV+gNHC12/7RxrabD2/a31bLAO/a11YbAO/K21MFhLf2s9Gqw9f2vdGqzFu11jnVusE2/gxmI9eQOnFuvYG7i0WH7uK4t15w2cWazrXWP9a7H8f/bQYvm/6IPF+sF/pVssf19Ii/WH/0K2WH/uGuvEWC39gSdj9Twy+Rqri5EZx1gt/IE7Y/XoD1wbq9vd3w1PlufnD2OBp+ebm/uxwPHF6emnscDR4vLy41jg7vHq6sNY4Pr27OyYdRaLUrDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssL6u+k+AAQCR9eHtLKvLfwAAAABJRU5ErkJggg==">
+
+<link rel="canonical" href="https://blog.harveyjhuang.com/2020/04/19/data-auto-pipeline/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-TW'
+  };
+</script>
+
+  <title>透過 Kafka & Golang 設計一套數據同步系統 | Harvey 技術筆記</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Harvey 技術筆記" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Harvey 技術筆記</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">程式/設計/生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>關於</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜尋
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜尋..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-TW">
+    <link itemprop="mainEntityOfPage" href="https://blog.harveyjhuang.com/2020/04/19/data-auto-pipeline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Harvey Jhuang">
+      <meta itemprop="description" content="主要以後端技術分享為主，偶爾學點前端技術。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Harvey 技術筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          透過 Kafka & Golang 設計一套數據同步系統
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">發表於</span>
+
+              <time title="創建時間：2020-04-19 20:25:03" itemprop="dateCreated datePublished" datetime="2020-04-19T20:25:03+08:00">2020-04-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新於</span>
+                <time title="修改時間：2020-05-19 18:31:25" itemprop="dateModified" datetime="2020-05-19T18:31:25+08:00">2020-05-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分類於</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%82%A3%E4%BA%9B%E5%B9%B4%E4%B8%80%E8%B5%B7%E8%B8%A9%E9%81%8E%E7%9A%84%E5%9D%91/" itemprop="url" rel="index"><span itemprop="name">那些年一起踩過的坑</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1>前言</h1>
+<p>本篇將透過幾個面向來簡要介紹如何規劃一套數據同步系統：</p>
+<ol>
+<li>
+<p>情境與思維</p>
+<ul>
+<li>專案情境</li>
+<li>技術選型</li>
+</ul>
+</li>
+<li>
+<p>專案簡介</p>
+<ul>
+<li>專案目標</li>
+<li>設計思路</li>
+<li>專案瓶頸與突破</li>
+</ul>
+</li>
+<li>
+<p>結論</p>
+</li>
+</ol>
+<a id="more"></a>
+<h1>情境與思維</h1>
+<h2 id="專案情境">專案情境</h2>
+<p>隨著業務的穩定發展，資料量級必定也是呈現指數般的成長，其中常遇到的問題是：</p>
+<ol>
+<li>
+<p>單一資料如何做更<strong>多元的應用</strong>，發揮資料更大的價值<br>
+隨著業務的發展，資料庫不單單只是記錄交易而已，更多的應用也會應運而生，比如報表系統、對帳系統、風控系統、分析系統等等，因此為了滿足這些不同業務，就必須對資料做更多不同層面的應用、剖析與計算，但是這些操作並非都是原資料庫所擅長的，因此要規劃一個可接受的方案去滿足業務變化與需求。<br>
+ps: 其中這裡提到的“可接受”更可以明確定義是否滿足以下要求：</p>
+<ul>
+<li>資料<strong>即時性</strong>的要求：同步速度不能太慢，要在可接受延遲時間內到達。</li>
+<li>資料<strong>一致性</strong>的要求：同步結果需要與原資料庫一致，不因同步過程而產生不同結果。</li>
+<li>資料<strong>可靠性</strong>的要求：同步過程必須可靠，不能遺失資料。</li>
+</ul>
+</li>
+<li>
+<p>如何<strong>降低原資料庫的壓力</strong><br>
+如上所述，隨著業務的發展，資料庫也會負責更多不同類型的事務，因此若這些業務都在原資料庫上處理的話，必定對核心業務造成影響，因此便有可能考慮用其他類型的資料庫來處理原資料庫不擅長之部分，但是一但決定採取這個方案，便要考量的便是如何將資料從原資料庫同步到新資料庫，具體來說要考量以下問題：</p>
+<ul>
+<li>以何種方式同步：畢竟非同原的數據庫未必支持數據間的同步。</li>
+<li>如何降低同步帶來的影響：比如用排程定期查詢資料庫就不是個好方法。</li>
+<li>如何提高資料的複用：如何將同步資料提供給多個資料庫使用。</li>
+</ul>
+</li>
+<li>
+<p><strong>多來源庫的問題</strong><br>
+有時我們會以各種維度去區分資料庫，比如以業務來區分資料庫，因而導致原資料庫有多台的情況，雖然這某一層面或多或少分擔資料庫的壓力，但是也會對於業務應用方面帶來些許不便，舉例來說如果要規劃一個風控系統，必定不會只考量單一種業務庫。<br>
+除了應用層面外，在管理方面也會帶來一些不便，具體會體現在幾個面向：</p>
+<ul>
+<li>跨區問題：GCP &amp; AWS 都有所謂的服務區，比如你的機器可以架在 Tokyo，也可以架在 Korea，但是不同區域會帶來一些問題，比如網路通信的差異。</li>
+<li>防火牆議題：需要制定更多相關規則來滿足業務。</li>
+<li>設定檔問題：應用服務可能需要設定多個來源庫的連線設定。</li>
+</ul>
+</li>
+</ol>
+<h2 id="技術選型">技術選型</h2>
+<p>考量上述場景，專案的思維如下：</p>
+<ol>
+<li>
+<p><strong>以 replicate 方式同步</strong>：<br>
+我們透過 MySQL 原有的 replicate 協議來同步資料，與 MySQL 建立起 Master/Slave，以獲取每一筆資料的變動。</p>
+</li>
+<li>
+<p><strong>以 mysqldump 做初始化</strong>：<br>
+在啟動同步的初期，我們會先針對現有資料庫做一次初始化，獲取當前數據庫的所有資料，透過這個方法，我們唯一的風險僅在 mysqldump 執行剛開始會先 flush tables，後續便會不斷地將目前的資料已快照的方式傳遞給你</p>
+</li>
+<li>
+<p><strong>使用 Kafka 傳遞資料</strong>：<br>
+使用 Kafka 主要是考量其幾個特性，這邊我們先簡略說明，待後續會有 Kafka 系列的相關文章再跟大家做詳細的分享：</p>
+<ul>
+<li><strong>水平擴展方便</strong>：讓我們可以隨著業務量來應變</li>
+<li><strong>訊息傳遞量與速度</strong>：Kafka 在訊息傳遞速度上，無論訊息大小為何，相較於其他 MQ 都有極大的優勢</li>
+<li><strong>可容錯性高</strong>：可容錯性高這點不單指的是 Kafka brokers 本身，對於 client 端也十分容易實現，這全仰賴於 Kafka 本身 Topic 的 Partition 和 Replication 的搭配</li>
+<li>可輕鬆實現訊息傳遞的 <strong>at least once</strong>，讓我們對於消息傳遞有一定的可靠性</li>
+</ul>
+</li>
+</ol>
+<h1>專案簡介</h1>
+<h2 id="專案目標">專案目標</h2>
+<p>根據專案情境以及系統的通用性，我們將專案目標定義為以下幾點：</p>
+<ul>
+<li>提供資料全量和增量備份</li>
+<li>保證資料的最終一致性</li>
+<li>保證資料一定至少推送一次 (at least once)</li>
+<li>保證與資料來源的連線品質，透過檢測心跳自動切換連線（僅限同一 MySQL 集群）</li>
+<li>保證高併發的有序性</li>
+<li>保證資料同步的即時性</li>
+<li>服務本身是無狀態，方便水平擴展</li>
+</ul>
+<h2 id="設計思路">設計思路</h2>
+<h3 id="核心概念">核心概念</h3>
+<p>根據上述的目標可以發現，這套系統主要是基於 at least once 的前提下來設計，這便代表：</p>
+<ol>
+<li>資料會有重複丟的現象(只會出現在補救資料的場景)</li>
+<li>下游必須做好冪等性</li>
+</ol>
+<p>至於這樣處理的好處在於：</p>
+<ol>
+<li>延遲性更低，因為可以把一些驗證擺在後續做，若有問題再回補。</li>
+<li>資料一致性和冪等性就以唯一識別碼處理</li>
+</ol>
+<p>此外這套系統也仰賴 Kafka 的特性，具體來說：</p>
+<ol>
+<li>高吞吐量</li>
+<li>cluster &amp; replicate 保證可靠</li>
+<li>partition 保證併發的有序性</li>
+</ol>
+<p>因此我們的設計便能在確保吞吐量的同時，也保證資料一致性跟可靠性</p>
+<h3 id="運作流程">運作流程</h3>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAC9UExURVlZWdPT07KysmRkZIWFhfT09JmZmWZmZm9vb39/fxkZGUxMTDMzM3p6epCQkKamppubm729venp6cjIyN7e3tbW1s/Pz8LCwnx8fLS0tFZWVoiIiI+Pj6GhoeTk5Glpabu7u93d3evr66CgoJSUlKqqqsnJyeDg4Hd3d8PDw+Xl5bi4uNHR0dvb26Ojo6urq+fn51hYWDg4OCgoKHBwcK2traenp0FBQe7u7vHx8U5OTre3t8zMzHV1df///7GrnpQAAAA/dFJOU///////////////////////////////////////////////////////////////////////////////////AI4mfBcAAAUGSURBVHja7NoJb6M4GMZxY0NCD64kve/pMZ2d3Z297+X7f6zFNmBAMUXa6URl/q9UJSWPUPzrizFWRUlNLgEBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYYIEFAVhggQUWWGBBABZYYIEFFlgQgAUWWGCBBRYEYIEFFlhggQUBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYn6cCIcRXgvX/h9qcIVBqDdbEM8RCxGCB9QqXYRwHYDHBgwXWl8eKZKiESHI3Ba1kWs3fKixcaJUl1YyeBm7Ocq+yLItUiVBGnXxenSHJolIKEcwHq6ikbOX1YGVzQCTN8LPmSLreghUl9sN4Uw7yajMrLC0TZ1ImzqY6FEop0+pIaEN5HaoOxVuwEqFyc4I46uSlzOLqgxlh6UaR9l3VYWl9Fdoxb1Q90KJtu41pwwFW/WHhTtW8i7TafLCqRsk6bsGw63L9qurXRmuIlbT9lDQnlXU+nBFW1Q2qnZbDprWa2tjR90LZFqx1/+Td/HpGWLlrLDvIwTcx6dQ1Vrntbig68cDms3JwbA5Y1azs1ger6sNV/bbIw1jU81MvNAGrl58RVn8ozW+btF08iGFoAlYvP3csfVur1gJBEIA1uBmue5dhZDOyO2epbmgCVi8/I6x0MMHH9pjsTfBhNzQBq5uPZoQlB0uH3DZG4EZqQ26fL3sZq5uf09Ih6qw3i/pm6BZO0qZX7rrUS68Xsbr5ZE4rePMk08pk9aUZugfqppvs6AM1Acvlo/StP+6EbW06z8hJqxbYp2BZPQUnFsLsKuhQdaHqn5ewbF7KXIn0jWO5MqOQ7RaNLPtbNMmmhimj0GUmYLl8Gs0Lq4wyPbTu1l2QKqHSouzs3OlDIslW5SQsnY/NXmFplyNvEuuLV/Tau9BzwiraDUSwXmysztYWWNtL1psXeumgIrDGaqXvBfUuvtqUYI3V2t1wk1e2msFluJJm6zDJXv/fIfjPP7DAAgsssCiwwAILLLDAosACCyywwAKLAgsssMACC6zt9fDz/v75tyOB+98PD2+ORgKffjw4OP1uJPDxl+Xy8v1I4MPF3t7VNyOB4/vF4uzdzrG+39f1kz/w66Guv/yBvw90KX/gZKkr8Qf+2dOV+gNHC12/7RxrabD2/a31bLAO/a11YbAO/K21MFhLf2s9Gqw9f2vdGqzFu11jnVusE2/gxmI9eQOnFuvYG7i0WH7uK4t15w2cWazrXWP9a7H8f/bQYvm/6IPF+sF/pVssf19Ii/WH/0K2WH/uGuvEWC39gSdj9Twy+Rqri5EZx1gt/IE7Y/XoD1wbq9vd3w1PlufnD2OBp+ebm/uxwPHF6emnscDR4vLy41jg7vHq6sNY4Pr27OyYdRaLUrDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssL6u+k+AAQCR9eHtLKvLfwAAAABJRU5ErkJggg==" data-original="./flow_zh.png" alt="Flow"></p>
+<ul>
+<li>同步組件:
+<ul>
+<li>同步模組: 負責與來源庫建立協議獲取事件通知並將其解析後，推送到 MQ 。</li>
+<li>排程模組: 負責在背景定時執行任務，包括確認連線品質、確認數據落地以及紀錄同步品質與處理進度。</li>
+<li>快取模組: 負責暫存資訊，以便背景服務後續處理。</li>
+<li>告警模組: 負責在服務異常時，針對連線異常、數據同步異常來告警。</li>
+</ul>
+</li>
+<li>來源庫: 數據同步的來源資料庫，這邊特別指 MySQL。</li>
+<li>備份庫: 儲存以解析的數據，以便在排成偵測到數據同步異常時能有資料補救。</li>
+<li>設定庫: 負責紀錄失敗事件，以及記錄數據同步的進度。</li>
+<li>MQ: 負責讓同步組件推送解析數據，同時也讓使用者能訂閱事件。</li>
+<li>使用者: 需要同步數據的服務。</li>
+</ul>
+<h4 id="同步流程">同步流程</h4>
+<p>一開始紀錄 MySQL 的 GTID 後，向 MySQL 分別申請 replicate 和 mysqldump 兩種協議，將數據流分為全量同步和增量同步兩個部分同時進行，這麼做主要有以下優點：</p>
+<ol>
+<li>全量同步和增量同步的資料流可以完全分開，更易於 debug ，原因是全量同步得到的是完整資料，增量同步得到的是變動資訊。</li>
+<li>可以針對全量同步和增量同步做更佳的效能優化，比如全量同步的資料是完整的，因此可以併發去做事件解析，然而增量同步就要考量資料的順序性來做優化。</li>
+<li>下游服務可以自己決定是否要全量備份的資料</li>
+</ol>
+<h4 id="背景服務">背景服務</h4>
+<ol>
+<li>
+<p>儲存服務的處理進度點：<br>
+服務會定期紀錄目前數據同步的進度，更準確的說我們紀錄該組 MySQL 的 gtid 資訊，這主要是為了在服務重啟時能夠以剛才的進度繼續執行同步。</p>
+</li>
+<li>
+<p>紀錄服務的監控數據：<br>
+紀錄的數據包括同步速率、連線品質等等。</p>
+</li>
+<li>
+<p>監控告警：<br>
+針對異常監控發出告警到 slack 或下游應用服務。</p>
+</li>
+<li>
+<p>驗證資料落地：<br>
+透過事後驗證的方式，我們將資料驗證落地與補救機制放在後面去做，原因有：</p>
+<ul>
+<li>同步數據時不用等待數據落地，加速同步進行。</li>
+<li>數據不落地的比例十分低，因此只要事後根據失敗時間點資料回補就行了。</li>
+</ul>
+</li>
+</ol>
+<h2 id="專案瓶頸與突破">專案瓶頸與突破</h2>
+<p>終於要來跟大家分享<strong>那些年一起踩過的坑</strong>了，下面我將針對實作專案時，所遇到的難題跟大家一一介紹。</p>
+<h3 id="連線品質的保證">連線品質的保證</h3>
+<p>一開始便有考量到連線品質的把控，因此一開始的做法是如同 MySQL Master/Slave 一樣，服務也去監聽 heartbeat 表確保連線品質。<br>
+殊不知忽略一個顯而易見的盲點，如果同步中斷…就獲取不到 heartbeat 表的 binlog 事件 Orz。<br>
+幸好這個問題易於解決，只需要定期也檢測最新一次收到事件的時間點就可以了。</p>
+<h3 id="全量同步的方案選擇">全量同步的方案選擇</h3>
+<p>由於同步數據必定有初始化的需求，也就是這裡提到的全量備份，當時心中跑出三種方案：</p>
+<ol>
+<li>
+<p>透過程式端拉sql：<br>
+不採用！原因如下：</p>
+<ul>
+<li>對資料庫造成一定負擔。</li>
+<li>無法確認同步位置，比如要從哪個 GTID 位置開始。</li>
+<li>無法適用全部情況，因為每個 table schema 都不一樣。</li>
+</ul>
+</li>
+<li>
+<p>拷貝文件後在本地解析：<br>
+不採用！原因如下：</p>
+<ul>
+<li>需要人工介入的部分，比如 DBA。</li>
+<li>場景並非 MySQL to MySQL。</li>
+</ul>
+</li>
+<li>
+<p>mysqldump：<br>
+採用！原因如下：</p>
+<ul>
+<li>可以從程式碼擷取訊息解析。</li>
+<li>能夠確認同步的起始位置。</li>
+<li>適用多數狀況。</li>
+</ul>
+</li>
+</ol>
+<h3 id="增量同步的效能優化">增量同步的效能優化</h3>
+<p>由於增量同步得到的是變動資訊，因此考量數據的一致性便沒有做併發，但事後發現實在太慢拉!<br>
+因此為了達到在高併發的情況下也能保證資料最終一致性，做了以下優化:<br>
+- 在解析事件時，也將事件的 Primary Key 做為 Kafka 傳遞訊息的 Message Key。<br>
+- 透過 Kafka 的 Partition 特性，在傳遞訊息時以 Message Key 分發訊息到不同 Partition。<br>
+至於為什麼這樣便可以達到分區的有序性呢？<br>
+舉個例子，假設今天你的訂單的 Primary Key 是訂單編號，如此你便可以確保同一個編號的變動必定落在同一個 Partition，也就是代表隊單筆訂單而言，你的最終結果是不變的！<br>
+ref: <a href="https://docs.datastax.com/en/kafka/doc/kafka/kafkaHowMessages.html" target="_blank" rel="noopener">How Apache Kafka messages are written</a><br>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAC9UExURVlZWdPT07KysmRkZIWFhfT09JmZmWZmZm9vb39/fxkZGUxMTDMzM3p6epCQkKamppubm729venp6cjIyN7e3tbW1s/Pz8LCwnx8fLS0tFZWVoiIiI+Pj6GhoeTk5Glpabu7u93d3evr66CgoJSUlKqqqsnJyeDg4Hd3d8PDw+Xl5bi4uNHR0dvb26Ojo6urq+fn51hYWDg4OCgoKHBwcK2traenp0FBQe7u7vHx8U5OTre3t8zMzHV1df///7GrnpQAAAA/dFJOU///////////////////////////////////////////////////////////////////////////////////AI4mfBcAAAUGSURBVHja7NoJb6M4GMZxY0NCD64kve/pMZ2d3Z297+X7f6zFNmBAMUXa6URl/q9UJSWPUPzrizFWRUlNLgEBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYYIEFAVhggQUWWGBBABZYYIEFFlgQgAUWWGCBBRYEYIEFFlhggQUBWGCBBRZYYEEAFlhggQUWWBCABRZYYIEFFgRggQUWWGCBBQFYYIEFFlhgQQAWWGCBBRZYEIAFFlhggQUWBGCBBRZYn6cCIcRXgvX/h9qcIVBqDdbEM8RCxGCB9QqXYRwHYDHBgwXWl8eKZKiESHI3Ba1kWs3fKixcaJUl1YyeBm7Ocq+yLItUiVBGnXxenSHJolIKEcwHq6ikbOX1YGVzQCTN8LPmSLreghUl9sN4Uw7yajMrLC0TZ1ImzqY6FEop0+pIaEN5HaoOxVuwEqFyc4I46uSlzOLqgxlh6UaR9l3VYWl9Fdoxb1Q90KJtu41pwwFW/WHhTtW8i7TafLCqRsk6bsGw63L9qurXRmuIlbT9lDQnlXU+nBFW1Q2qnZbDprWa2tjR90LZFqx1/+Td/HpGWLlrLDvIwTcx6dQ1Vrntbig68cDms3JwbA5Y1azs1ger6sNV/bbIw1jU81MvNAGrl58RVn8ozW+btF08iGFoAlYvP3csfVur1gJBEIA1uBmue5dhZDOyO2epbmgCVi8/I6x0MMHH9pjsTfBhNzQBq5uPZoQlB0uH3DZG4EZqQ26fL3sZq5uf09Ih6qw3i/pm6BZO0qZX7rrUS68Xsbr5ZE4rePMk08pk9aUZugfqppvs6AM1Acvlo/StP+6EbW06z8hJqxbYp2BZPQUnFsLsKuhQdaHqn5ewbF7KXIn0jWO5MqOQ7RaNLPtbNMmmhimj0GUmYLl8Gs0Lq4wyPbTu1l2QKqHSouzs3OlDIslW5SQsnY/NXmFplyNvEuuLV/Tau9BzwiraDUSwXmysztYWWNtL1psXeumgIrDGaqXvBfUuvtqUYI3V2t1wk1e2msFluJJm6zDJXv/fIfjPP7DAAgsssCiwwAILLLDAosACCyywwAKLAgsssMACC6zt9fDz/v75tyOB+98PD2+ORgKffjw4OP1uJPDxl+Xy8v1I4MPF3t7VNyOB4/vF4uzdzrG+39f1kz/w66Guv/yBvw90KX/gZKkr8Qf+2dOV+gNHC12/7RxrabD2/a31bLAO/a11YbAO/K21MFhLf2s9Gqw9f2vdGqzFu11jnVusE2/gxmI9eQOnFuvYG7i0WH7uK4t15w2cWazrXWP9a7H8f/bQYvm/6IPF+sF/pVssf19Ii/WH/0K2WH/uGuvEWC39gSdj9Twy+Rqri5EZx1gt/IE7Y/XoD1wbq9vd3w1PlufnD2OBp+ebm/uxwPHF6emnscDR4vLy41jg7vHq6sNY4Pr27OyYdRaLUrDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssMCiwAILLLDAAosCCyywwAILLAossMACCyywKLDAAgsssL6u+k+AAQCR9eHtLKvLfwAAAABJRU5ErkJggg==" data-original="./key.png" alt="Key"></p>
+<h3 id="全量同步的效能優化">全量同步的效能優化</h3>
+<p>全量同步的效能優化部分，當時也想了兩個方案去實作：</p>
+<ol>
+<li>依照 table 數目以 goroutine 去執行 mysqldump，比如有三張表就開三個 goroutine 去執行 mysqldump:<br>
+失敗！原因在於 mysqldump 會有執行 flush tables with read lock ，多個 mysqldump 就等同於短時間會有多次執行，進而阻塞後續後續其他線程的寫操作。<br>
+原因是因為首先執行的 mysqldump 會開始 query 資料，也就是執行類似以下的語句</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="string">`example`</span>.<span class="string">`order`</span></span><br></pre></td></tr></table></figure>
+<p>緊接著下一個 mysqldump 執行到 flush tables with read lock 時，便有可能因為上述語句查詢較久而在等待鎖釋放，因此後面線程便要等待 flush tables with read lock 的執行，此時執行</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> <span class="keyword">processlist</span></span><br></pre></td></tr></table></figure>
+<p>便看到的便是一堆操作等待著 flush tables with read lock 執行。</p>
+<ol start="2">
+<li>mysqldump 執行一次，將接到 raw event 丟到 channel 裡面，透過 worker pool 去做執行：<br>
+採用！原因在於經過 pprof 我們發現執行慢的並不是 mysqldump 資料倒不夠快，而是解析事件需要較長的時間。<br>
+由於 mysqldump 都是完整資料，因此我們採用 worker pool 批次解析事件，藉此加快處理速度，最終我們在全量同步的效能優化部分得到 50 倍的提升。</li>
+</ol>
+<h3 id="資料可靠的保證">資料可靠的保證</h3>
+<p>我們主要是透過以下幾個設計滿足訊息的可靠性：</p>
+<ol>
+<li>
+<p>Kafka replicate：<br>
+可以透過 replicate &amp; min.insync.replicas 的設定搭配，使得 Kafka 在滿足可靠性的要求後才會回覆 Producer 成功。<br>
+比如 replicate = 3 &amp; min.insync.replicas = 2，Kafka 只有在確認到有兩個 replicate 落地後才會回覆訊息接收成功</p>
+</li>
+<li>
+<p>producer ack &amp; retry：<br>
+Kafka 的 producer 傳送訊息給 Kafka 可以決定是否要等待 Kafka brokers 回應，以及擁有 retry 機制。<br>
+因此搭配 replicate 機制，我們就可以確保每份訊息至少都有一個副本存在，如此便可以確保此系統具有較高的可靠性。</p>
+</li>
+</ol>
+<h1>結論</h1>
+<p>本篇透過 MySQL Replication &amp; mysqldump 特性為基礎，再加上 Kafka 特性以及 Golang 程式端的結合，規劃一套數據同步系統。<br>
+經過我們實測以及運行的結果，發現這套系統可以滿足我們同步多台 MySQL 資料的需求，特別是在效能跟記憶體使用上都有不錯的表現：</p>
+<ul>
+<li>單一資料庫同步速率約 5000-8000 rows/sec</li>
+<li>記憶體使用量約 500 mb</li>
+</ul>
+<p>然而必須坦白說這套系統目前運行的時間還不算太長，因此一定還有一些坑等待著我們去踩 Orz，待後續遇到後再更新此篇文章。<br>
+最後希望這篇分享能讓想要做類似系統的人，可以預先知道我們踩過的坑，更順利的開發下去。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/kafka/" rel="tag"># kafka</a>
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/15/how-to-build-blog/" rel="prev" title="如何透過 Github 和 Hexo 搭起 Blog">
+      <i class="fa fa-chevron-left"></i> 如何透過 Github 和 Hexo 搭起 Blog
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/24/what-is-kafka/" rel="next" title="What is Kafka?">
+      What is Kafka? <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概要
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">2.</span> <span class="nav-text">情境與思維</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#專案情境"><span class="nav-number">2.1.</span> <span class="nav-text">專案情境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#技術選型"><span class="nav-number">2.2.</span> <span class="nav-text">技術選型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">3.</span> <span class="nav-text">專案簡介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#專案目標"><span class="nav-number">3.1.</span> <span class="nav-text">專案目標</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#設計思路"><span class="nav-number">3.2.</span> <span class="nav-text">設計思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#核心概念"><span class="nav-number">3.2.1.</span> <span class="nav-text">核心概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#運作流程"><span class="nav-number">3.2.2.</span> <span class="nav-text">運作流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#同步流程"><span class="nav-number">3.2.2.1.</span> <span class="nav-text">同步流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#背景服務"><span class="nav-number">3.2.2.2.</span> <span class="nav-text">背景服務</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#專案瓶頸與突破"><span class="nav-number">3.3.</span> <span class="nav-text">專案瓶頸與突破</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#連線品質的保證"><span class="nav-number">3.3.1.</span> <span class="nav-text">連線品質的保證</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全量同步的方案選擇"><span class="nav-number">3.3.2.</span> <span class="nav-text">全量同步的方案選擇</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#增量同步的效能優化"><span class="nav-number">3.3.3.</span> <span class="nav-text">增量同步的效能優化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全量同步的效能優化"><span class="nav-number">3.3.4.</span> <span class="nav-text">全量同步的效能優化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#資料可靠的保證"><span class="nav-number">3.3.5.</span> <span class="nav-text">資料可靠的保證</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#"><span class="nav-number">4.</span> <span class="nav-text">結論</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Harvey Jhuang"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Harvey Jhuang</p>
+  <div class="site-description" itemprop="description">主要以後端技術分享為主，偶爾學點前端技術。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:ohmygirl386@hotmail.com" title="E-Mail → mailto:ohmygirl386@hotmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/harvey-jhuang-6864a011b" title="Linkedin → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;harvey-jhuang-6864a011b" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.cakeresume.com/me/jiawei-jhuang" title="CakeResume → https:&#x2F;&#x2F;www.cakeresume.com&#x2F;me&#x2F;jiawei-jhuang" rel="noopener" target="_blank"><i class="fas fa-file fa-fw"></i>CakeResume</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml"><i class="fa fa-rss fa-fw"></i>RSS</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Harvey Jhuang</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 強力驅動
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'fbd0a4d8a2c95b4dca00',
+      clientSecret: '84d8fd7717b61491b274f8213716830dd1e0ce5c',
+      repo        : 'harveyjhuang777.github.io',
+      owner       : 'harveyjhuang777',
+      admin       : ['harveyjhuang777'],
+      id          : '81bea1fe3875242d740b95743cdbdc69',
+        language: 'zh-TW',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script>!function(e){var c=Array.prototype.slice.call(document.querySelectorAll("img[data-original]"));function i(){for(var r=0;r<c.length;r++)t=c[r],0<=(n=t.getBoundingClientRect()).bottom&&0<=n.left&&n.top<=(e.innerHeight||document.documentElement.clientHeight)&&function(){var t,n,e,i,o=c[r];t=o,n=function(){c=c.filter(function(t){return o!==t})},e=new Image,i=t.getAttribute("data-original"),e.onload=function(){t.src=i,n&&n()},e.src=i}();var t,n}i(),e.addEventListener("scroll",function(){var t,n;t=i,n=e,clearTimeout(t.tId),t.tId=setTimeout(function(){t.call(n)},500)})}(this);</script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(e.href.match(t)||e.href.match(r))&&(e.href=a.dataset.original)})});</script></body>
+</html>
